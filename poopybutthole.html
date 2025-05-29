@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Find Your CA State Senator</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+      max-width: 600px;
+      margin: auto;
+    }
+    input, button {
+      padding: 8px;
+      margin: 6px 0;
+      width: 100%;
+    }
+    .result {
+      margin-top: 20px;
+      background: #f0f0f0;
+      padding: 12px;
+      border-radius: 8px;
+    }
+    a.button {
+      display: inline-block;
+      padding: 10px 15px;
+      background: #007bff;
+      color: white;
+      text-decoration: none;
+      border-radius: 6px;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h2>Find Your CA State Senator</h2>
+  <p>Enter your full address:</p>
+  <input type="text" id="addressInput" placeholder="123 Main St, Los Angeles, CA 90001">
+  <button onclick="findSenator()">Find My Senator</button>
+
+  <div id="result" class="result" style="display:none;"></div>
+
+  <script>
+    async function findSenator() {
+      const address = document.getElementById('addressInput').value;
+      const resultDiv = document.getElementById('result');
+      resultDiv.style.display = 'none';
+      resultDiv.innerHTML = 'Looking up your senator...';
+
+      const apiKey = 'YOUR_ACTUAL_API_KEY_HERE'; // Replace with your real OpenStates API key
+
+      try {
+        const geoResp = await fetch(`https://v3.openstates.org/people.geo?address=${encodeURIComponent(address)}`, {
+          headers: { 'X-API-Key': apiKey }
+        });
+
+        const geoData = await geoResp.json();
+        const caSenator = geoData.results.find(rep =>
+          rep.current_role &&
+          rep.current_role.state === 'ca' &&
+          rep.current_role.org_classification === 'upper'
+        );
+
+        if (!caSenator) throw new Error("Couldn't find a CA State Senator for that address.");
+
+        const { name, email } = caSenator;
+        const mailto = `mailto:${email}?subject=Please%20Support%20SB%2079&body=Dear%20Senator%20${encodeURIComponent(name)},%0A%0AI'm a constituent urging you to vote YES on SB 79 to help solve California's housing crisis.%0A%0AThank you.`;
+
+        resultDiv.innerHTML = `
+          <strong>Your Senator:</strong> ${name}<br>
+          <strong>Email:</strong> <a href="mailto:${email}">${email}</a><br>
+          <a href="${mailto}" class="button">📬 Email Your Senator Now</a>
+        `;
+        resultDiv.style.display = 'block';
+      } catch (err) {
+        resultDiv.innerHTML = `❌ Error: ${err.message}`;
+        resultDiv.style.display = 'block';
+      }
+    }
+  </script>
+</body>
+</html>
+
